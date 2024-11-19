@@ -49,7 +49,7 @@ watch() {
   do
     export DISPLAY=$d
 
-    while clipnotify; do
+    while clipnotify || sleep 20s; do
       xclip -o -selection clipboard | clipsync insert "$d"
     done &
   done
