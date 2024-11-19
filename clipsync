@@ -1,0 +1,74 @@
+#!/usr/bin/env sh
+
+xDisplays=(:9 :11)
+
+insert() {
+  src=$1
+  value=$(cat)
+
+  [[ -z $value && $CLIPBOARD_STATE == data ]] && return
+
+  _log $1 INS "$value"
+
+  if [[ $src == "WL" ]]; then
+    _log WL STATE $CLIPBOARD_STATE
+  fi
+
+  if [[ $src != "WL" ]]; then
+    curr=$(wl-paste)
+
+    if [[ "$value" != "$curr" ]]; then
+      _log WL SET
+      echo -n "$value" | wl-copy
+    fi
+  fi
+
+  for d in ${xDisplays[*]}
+  do
+    if [[ $src != "$d" ]]; then
+      export DISPLAY=$d
+
+      curr=$(xclip -o -selection clipboard)
+
+      if [[ "$value" != "$curr" ]]; then
+        _log $d SET
+        echo -n "$value" | xclip -selection clipboard
+      fi
+    fi
+  done
+}
+
+watch() {
+  {
+    wl-paste \
+      --type text \
+      --watch clipsync insert WL
+  } &
+  
+  for d in ${xDisplays[*]}
+  do
+    export DISPLAY=$d
+
+    while clipnotify; do
+      xclip -o -selection clipboard | clipsync insert "$d"
+    done &
+  done
+
+  wait
+}
+
+kill() {
+  pkill wl-paste
+  pkill clipnotify
+  pkill xclip
+  pkill clipsync
+}
+
+_log() {
+  src=$1
+  op=$2
+  val=$3
+  echo "${EPOCHSECONDS} $src $op ${val::32}" >&2
+}
+
+"$@"
