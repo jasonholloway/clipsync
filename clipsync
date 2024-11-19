@@ -65,10 +65,13 @@ kill() {
 }
 
 _log() {
-  src=$1
-  op=$2
-  val=$3
-  echo "${EPOCHSECONDS} $src $op ${val::32}" >&2
+  if [[ ! -z $CLIPSYNC_DEBUG ]]
+  then
+    src=$1
+    op=$2
+    val=$3
+    echo "${EPOCHSECONDS} $src $op ${val::32}" >&2
+  fi
 }
 
 "$@"
